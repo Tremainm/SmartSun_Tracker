@@ -52,6 +52,9 @@ String homePagePart1 = F(R"=====(<!DOCTYPE html>
 	<body>
 		<div class="flex-Container">
 		<h1> SmartSun Tracker Website </h1>
+    <h2>ThingSpeak Charts</h2>
+    <iframe width="450" height="260" style="border: 1px solid #cccccc;" src="https://thingspeak.com/channels/2412062/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15"></iframe>
+    <iframe width="450" height="260" style="border: 1px solid #cccccc;" src="https://thingspeak.com/channels/2412062/charts/1?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&title=DHT-11+Humidity&type=line&xaxis=Time&yaxis=Humidity"></iframe>
       
 		<p>Welcome to my website that tracks the position of the sun to maximize solar energy</p>
     

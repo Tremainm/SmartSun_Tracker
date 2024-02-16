@@ -25,6 +25,16 @@ Natasha Rohan on 16/10/2023
 #include <DFRobot_DHT11.h>
 #include <Wire.h>
 #include "rgb_lcd.h"
+#include "ThingSpeak.h"
+
+#define REPORTING_PERIOD_MS 20000
+uint32_t tsLastReport = 0;
+
+unsigned long myChannelNumber = 2412062;
+const char * myWriteAPIKey = "YA5W2G3JPVNJ1BPT";
+
+WiFiClient client;
+String myStatus = "";  
 
 rgb_lcd lcd;
 
@@ -45,14 +55,14 @@ int servo_horiz = 27;
 Servo vertical; // vertical servo
 int servo_vert = 18;
 
-int servoh = 175;
+int servoh = 170;
 int servov = 100; 
 
-int servohLimitHigh = 180;  //limits for horizontal servo
+int servohLimitHigh = 1700;  //limits for horizontal servo
 int servohLimitLow = 5;
 
-int servovLimitHigh = 180;  //limits for vertical servo
-int servovLimitLow = 95;
+int servovLimitHigh = 1800;  //limits for vertical servo
+int servovLimitLow = 100;
 
 // LDR pin connections
 int ldrlt = 34; //LDR top left
@@ -62,6 +72,8 @@ int ldrrb = 33; //LDR bottom rigt
 
 DFRobot_DHT11 DHT;
 #define DHT11_PIN 4
+float thingSpeak_temp;
+float thingSpeak_humid;
 
 const char* ssid = "TremainIphone";
 const char* password = "tremainm";
@@ -156,32 +168,12 @@ void setup()
   delay(100);
 
   lcd.setCursor(0, 0);            //prints custom character to lcd
-  lcd.write((unsigned char)1);
-  delay(500);
-  lcd.clear();
-  lcd.write((unsigned char)2);
-  delay(500);
-  lcd.clear();
-  lcd.write((unsigned char)3);
-  delay(500);
-  lcd.clear();
-  lcd.write((unsigned char)4);
-  delay(500);
-  lcd.clear();
-  lcd.write((unsigned char)5);
-  delay(500);
-  lcd.clear();
-  lcd.write((unsigned char)6);
-  delay(500);
-  lcd.clear();
-
-  /*for(int i = 1; i <= 6; i++)
+  for(int i = 1; i <= 6; i++)
   {
     lcd.write((unsigned char)i);
     delay(500);
     lcd.clear();
-  }*/
-
+  }
   lcd.print("SmartSun Tracker");
   delay(2000);
 
@@ -203,13 +195,16 @@ void setup()
   
   horizontal.attach(servo_horiz);   //Servo initialize
   vertical.attach(servo_vert);
-  horizontal.write(175);
+  horizontal.write(170);
   vertical.write(100);
   delay(2500);
+
+  ThingSpeak.begin(client);
 }
 
 void loop() 
-{
+{  
+
 int lt = analogRead(ldrlt); // top left
 int rt = analogRead(ldrrt); // top right
 int lb = analogRead(ldrlb); // down left
@@ -271,13 +266,39 @@ if (-1*tol > diff_horiz || diff_horiz > tol) // check if the difference is in th
  {
  delay(5000);
  }
-
  horizontal.write(servoh);
  
  delay(diff_time);
  }
 
-  server.handleClient();
-  delay(2);//allow the cpu to switch to other tasks
+thingSpeak_temp = DHT.temperature;
+thingSpeak_humid = DHT.humidity;
+
+ThingSpeak.setField(1, thingSpeak_humid);
+ThingSpeak.setField(2, thingSpeak_temp);
+
+
+ if (millis() - tsLastReport > REPORTING_PERIOD_MS)
+  {          
+    // set the status
+    ThingSpeak.setStatus(myStatus);
+  
+    // write to the ThingSpeak channel
+    int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+    if(x == 200)
+    {
+      Serial.println("Channel update successful.");
+    }
+    else
+    {
+      Serial.println("Problem updating channel. HTTP error code " + String(x));
+    }
+    tsLastReport = millis();
+  } 
+  
+
+server.handleClient();
+delay(2);//allow the cpu to switch to other tasks
+}
 
   
