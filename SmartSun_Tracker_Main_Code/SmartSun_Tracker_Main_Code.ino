@@ -1,15 +1,8 @@
 /*
 Tremain Mannion
-01/04/2024
+SmartSun Tracker -- IoT Project
+29/04/2024
 
-Example web server from the Helloserver example in the esp32 webserver library.
-Hosts a webpage which has a live temperature reading and a live humidity reading.
-home.h contains 3 constant string literals which is 3 parts of the webpage that never change.
-handleRoot() builds up the webpage by adding as a C++ String:
-homePagePart1 + getTemp() + homePagePart2 + getHumid() + homePagePart3.
-
-This template was supplied by:
-Natasha Rohan on 16/10/2023
 */
 
 #include <WiFi.h>
@@ -18,7 +11,7 @@ Natasha Rohan on 16/10/2023
 #include <ESPmDNS.h>
 #include <Servo.h>
 #include "home.h"
-//#include "Functions.h"
+#include "ServoControl.h"
 #include <DFRobot_DHT11.h>
 #include <Wire.h>
 #include "rgb_lcd.h"
@@ -59,12 +52,6 @@ const int servo_vert = 18;
 int servoh;
 int servov;
 
-const int servohLimitHigh = 170;  //limits for horizontal servo
-const int servohLimitLow = 5;
-
-const int servovLimitHigh = 180;  //limits for vertical servo
-const int servovLimitLow = 100;
-
 // LDR pin connections
 int ldrlt = 34;  //LDR top left
 int ldrrt = 35;  //LDR top rigt
@@ -76,12 +63,14 @@ float thingSpeak_humid;
 
 int Led = 23;
 int Sw = 15;
-const int joyH = 39;  // L/R Parallax Thumbstick
-const int joyV = 36;  // U/D Parallax Thumbstick
-int servoVal;         // variable to read the value from the analog pin
+int joyH = 39;  // L/R Parallax Thumbstick
+int joyV = 36;  // U/D Parallax Thumbstick
 
 int Led_webButton = 13;
 int Sw_webSwitch = 16;
+
+//tol = tolerance (tolerance is used to stabilize the controller and reduce power consumptiom of servos)
+int tol = 90;
 
 WebServer server(80);
 
@@ -101,6 +90,7 @@ String getHumid()
   return String (h);
 }
 
+//handles web server button presses to move servo
 void handleKeyPress()
 {
   String keyPress = server.arg("button");
@@ -163,15 +153,7 @@ void handleKeyPress()
       {
         newAngle = 170;
         Serial.println("Right Limit Reached!");
-      } 
-      /*Serial.println("You pressed right");
-      currentAngle = horizontal.read();
-      newAngle = currentAngle + 5;
-      if (newAngle > 170) 
-      {
-      newAngle = 170;
       }
-      horizontal.write(newAngle);*/
       break;
     default:
       Serial.println("Incorrect button pressed");
@@ -238,13 +220,13 @@ void setup()
   delay(2000);
   lcd.clear();
   lcd.print("IP adress: ");
-  lcd.setCursor(0, 1);         //column 1, row 2
+  lcd.setCursor(0, 1);  //column 1, row 2
   lcd.print(WiFi.localIP());
   delay(5000);
   lcd.clear();
   delay(100);
 
-  lcd.setCursor(0, 0);            //prints custom character to lcd
+  lcd.setCursor(0, 0);  //prints custom character to lcd
   for(int i = 1; i <= 6; i++)
   {
     lcd.write((unsigned char)i);
@@ -253,7 +235,6 @@ void setup()
   }
   lcd.print("SmartSun Tracker");
   delay(2000);
-
 
   if (MDNS.begin("esp32")) 
   {
@@ -288,112 +269,35 @@ void loop()
 {
   if(digitalRead(Sw_webSwitch) == HIGH)
   {
-    //lcd.clear();
+    // gets stuck in this loop so allows the web buttons to work
     lcd.setCursor(0, 0);
     lcd.print("Web Buttons ");
     digitalWrite(Led_webButton, HIGH);
     digitalWrite(Led, LOW);
-
-    //server.handleClient();
   }
   else
   {
     digitalWrite(Led_webButton, LOW);
     if (digitalRead(Sw) == HIGH) 
     {
-      //lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("Mode: Manual");
       digitalWrite(Led, HIGH);
 
-      // Read the horizontal joystick value  (value between 0 and 4095)
-      servoVal = analogRead(joyH);
-      servoVal = map(servoVal, 0, 4095, 100, 180);  // scale it to use it with the servo (result  between 100 and 180)
-      vertical.write(servoVal);                     // sets the servo position according to the scaled value
-
-      // Read the horizontal joystick value  (value between 0 and 4095)
-      servoVal = analogRead(joyV);
-      servoVal = map(servoVal, 0, 4095, 5, 170);  // scale it to use it with the servo (result between 5 and 170)
-      horizontal.write(servoVal);                 // sets the servo position according to the scaled value
-
-      delay(15);  // waits for the servo to get there
+      joyStickControl();
     } 
     else 
     {
-      //lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("Mode: Auto  ");
       digitalWrite(Led, LOW);
 
-      int lt = analogRead(ldrlt);  // top left
-      int rt = analogRead(ldrrt);  // top right
-      int lb = analogRead(ldrlb);  // down left
-      int rb = analogRead(ldrrb);  // down right
-
-      int average_top = (lt + rt) / 2;     // average value top
-      int average_bottom = (lb + rb) / 2;  // average value down
-      int average_left = (lt + lb) / 2;    // average value left
-      int average_right = (rt + rb) / 2;   // average value right
-
-      // diff_time = difference time, tol = tolerance (tolerance is used to stabilize the controller and reduce power consumptiom of servos)
-      int diff_time = 10;
-      int tol = 90;
-
-      int diff_vert = average_top - average_bottom;   // check the diffirence of up and down
-      int diff_horiz = average_left - average_right;  // check the diffirence of left and right
-
-      if (-1 * tol > diff_vert || diff_vert > tol)  // check if the difference is in the tolerance else change vertical angle
-      {
-        if (average_top > average_bottom) 
-        {
-          servov = ++servov;
-          if (servov > servovLimitHigh) 
-          {
-            servov = servovLimitHigh;
-          }
-        } 
-        else if (average_top < average_bottom) 
-        {
-          servov = --servov;
-          if (servov < servovLimitLow) 
-          {
-            servov = servovLimitLow;
-          }
-        }
-        vertical.write(servov);
-      }
-
-      if (-1 * tol > diff_horiz || diff_horiz > tol)  // check if the difference is in the tolerance else change horizontal angle
-      {
-        if (average_left > average_right) 
-        {
-          servoh = --servoh;
-          if (servoh < servohLimitLow) 
-          {
-            servoh = servohLimitLow;
-          }
-        } 
-        else if (average_left < average_right) 
-        {
-          servoh = ++servoh;
-          if (servoh > servohLimitHigh) 
-          {
-            servoh = servohLimitHigh;
-          }
-        }
-        else if (average_left = average_right)
-        {
-        delay(5000);
-        }
-        horizontal.write(servoh);
-        delay(diff_time);
-      }
+      autoServoControl();
     }
   }
 
   thingSpeak_temp = DHT.temperature;
   thingSpeak_humid = DHT.humidity;
-
   ThingSpeak.setField(1, thingSpeak_humid);
   ThingSpeak.setField(2, thingSpeak_temp);
 
@@ -414,8 +318,6 @@ void loop()
     }
     tsLastReport = millis();
   }
-
   server.handleClient();
   delay(2);//allow the cpu to switch to other tasks
 }
-  
