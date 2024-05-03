@@ -78,13 +78,13 @@ void autoServoControl()
 
 void joyStickControl()
 {
-  // Read the horizontal joystick value  (ADC value between 0 and 4095)
-  servoVal = analogRead(joyH);
+  // Read the vertical joystick value  (ADC value between 0 and 4095)
+  servoVal = analogRead(joyV);
   servoVal = map(servoVal, 0, 4095, 100, 180);  // scale it to use it with the servo (result  between 100 and 180)
   vertical.write(servoVal);                     // sets the servo position according to the scaled value
 
   // Read the horizontal joystick value  (ADC value between 0 and 4095)
-  servoVal = analogRead(joyV);
+  servoVal = analogRead(joyH);
   servoVal = map(servoVal, 0, 4095, 5, 170);  // scale it to use it with the servo (result between 5 and 170)
   horizontal.write(servoVal);                 // sets the servo position according to the scaled value
 
