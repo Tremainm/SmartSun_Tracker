@@ -1,8 +1,7 @@
 /*
 Tremain Mannion
 SmartSun Tracker -- IoT Project
-29/04/2024
-
+03/05/2024
 */
 
 #include <WiFi.h>
@@ -63,8 +62,9 @@ float thingSpeak_humid;
 
 int Led = 23;
 int Sw = 15;
-int joyH = 39;  // L/R Parallax Thumbstick
-int joyV = 36;  // U/D Parallax Thumbstick
+
+int joyH = 36;  // L/R Parallax Thumbstick
+int joyV = 39;  // U/D Parallax Thumbstick
 
 int Led_webButton = 13;
 int Sw_webSwitch = 16;
@@ -252,7 +252,7 @@ void setup()
   server.begin();
   Serial.println("HTTP server started");
   
-  horizontal.attach(servo_horiz);   //Servo initialize
+  horizontal.attach(servo_horiz);  //Servo initialize
   vertical.attach(servo_vert);
 
   pinMode(Led, OUTPUT);

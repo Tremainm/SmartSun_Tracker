@@ -12,7 +12,7 @@ String homePagePart1 = F(R"=====(<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
  
 <!--Include a Title. Used by Search Engines -->
-<title> Temperature Reading WebServer </title>
+<title> SmartSun Tracker WebServer </title>
 <style>
    
    <!--choose good contrast between background and foreground colours -->
@@ -81,7 +81,7 @@ String homePagePart1 = F(R"=====(<!DOCTYPE html>
 			<p>Welcome to my website that tracks the position of the sun to maximize solar energy</p>  
 			
 			<h2>ThingSpeak Charts</h2>
-			<div><iframe width="450" height="260" style="border: 1px solid #cccccc;" src="https://thingspeak.com/channels/2412062/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&title=DHT-11+Temperature&type=line&xaxis=Time&yaxis=Temperature" title="Temperature chart" ></iframe></div>
+			<div><iframe width="450" height="260" style="border: 1px solid #cccccc;" src="https://thingspeak.com/channels/2412062/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&title=DHT-11+Temperature&type=line&xaxis=Time&yaxis=Temperature"title="Temperature chart" ></iframe></div>
 			<div><iframe width="450" height="260" style="border: 1px solid #cccccc;" src="https://thingspeak.com/channels/2412062/charts/1?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&title=DHT-11+Humidity&type=line&xaxis=Time&yaxis=Humidity" title="Humidity chart"></iframe></div>
 		<table>
         <tr>
